@@ -1,0 +1,35 @@
+FROM golang:1.16-buster AS build
+#
+# 1 Creation repertoir par defautl dans l'image
+WORKDIR /app
+#
+# 2 Copie go.mod et go.sum et coller a la racine de l'image
+COPY go.mod .
+COPY go.sum .
+#
+# 3 installe les modules de go.mod
+RUN go mod download
+#
+# 4 Copier tous les autres fichier
+COPY *.go ./
+#
+# 5 Compliler notre application
+RUN go build -o /go-apipostgres
+#
+# 6 reprendre une image avec un très faible volume
+FROM gcr.io/distroless/base-debian10
+#
+# 7 creer un repertoir par defaul
+WORKDIR /
+#
+# 8 copier la 1ere image et la coller dans la 2eme image
+COPY --from=build /go-apipostgres /go-apipostgres
+#
+# 9 ouverture d'un port sur le conteneur
+EXPOSE 8000
+#
+# 10 aucun utilisateur à défini
+USER nonroot:nonroot
+#
+# 11 comande pour lance l'image
+ENTRYPOINT ["/go-apipostgres"]
